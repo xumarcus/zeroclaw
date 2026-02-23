@@ -3,6 +3,9 @@
 # ── Stage 1: Build ────────────────────────────────────────────
 FROM rust:1.93-slim@sha256:9663b80a1621253d30b146454f903de48f0af925c967be48c84745537cd35d8b AS builder
 
+# Optional Cargo feature flags (e.g. "whatsapp-web", "whatsapp-web,hardware")
+ARG FEATURES=""
+
 WORKDIR /app
 
 # Install build dependencies
@@ -23,7 +26,7 @@ RUN mkdir -p src benches crates/robot-kit/src \
 RUN --mount=type=cache,id=zeroclaw-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,id=zeroclaw-cargo-git,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,id=zeroclaw-target,target=/app/target,sharing=locked \
-    cargo build --release --locked
+    cargo build --release --locked ${FEATURES:+--features $FEATURES}
 RUN rm -rf src benches crates/robot-kit/src
 
 # 2. Copy only build-relevant source paths (avoid cache-busting on docs/tests/scripts)
@@ -52,12 +55,12 @@ RUN mkdir -p web/dist && \
 RUN --mount=type=cache,id=zeroclaw-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,id=zeroclaw-cargo-git,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,id=zeroclaw-target,target=/app/target,sharing=locked \
-    cargo build --release --locked && \
+    cargo build --release --locked ${FEATURES:+--features $FEATURES} && \
     cp target/release/zeroclaw /app/zeroclaw && \
     strip /app/zeroclaw
 
 # Prepare runtime directory structure and default config inline (no extra stage)
-RUN mkdir -p /zeroclaw-data/.zeroclaw /zeroclaw-data/workspace && \
+RUN mkdir -p /zeroclaw-data/.zeroclaw/state/whatsapp-web /zeroclaw-data/workspace && \
     cat > /zeroclaw-data/.zeroclaw/config.toml <<EOF && \
     chown -R 65534:65534 /zeroclaw-data
 workspace_dir = "/zeroclaw-data/workspace"
@@ -108,8 +111,13 @@ ENTRYPOINT ["zeroclaw"]
 CMD ["gateway"]
 
 # ── Stage 3: Production Runtime (Distroless) ─────────────────
+# busybox (statically linked musl) provides shell access for debugging:
+#   docker exec -it zeroclaw /bin/busybox sh
+FROM busybox:stable-musl AS busybox
+
 FROM gcr.io/distroless/cc-debian13:nonroot@sha256:84fcd3c223b144b0cb6edc5ecc75641819842a9679a3a58fd6294bec47532bf7 AS release
 
+COPY --from=busybox /bin/busybox /bin/busybox
 COPY --from=builder /app/zeroclaw /usr/local/bin/zeroclaw
 COPY --from=builder /zeroclaw-data /zeroclaw-data
 
