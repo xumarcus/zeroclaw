@@ -27,6 +27,8 @@ services:
       
       # Allow public bind inside Docker (required for container networking)
       - ZEROCLAW_ALLOW_PUBLIC_BIND=true
+      # Bind to all interfaces so Docker port mapping works
+      - ZEROCLAW_GATEWAY_HOST=0.0.0.0
       # Default gateway port inside container
       - ZEROCLAW_GATEWAY_PORT=${ZEROCLAW_GATEWAY_PORT:-42617}
       
