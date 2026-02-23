@@ -169,6 +169,57 @@ Checks:
 zeroclaw doctor
 ```
 
+## Docker / Container Issues
+
+### WhatsApp Web channel fails: `Permission denied (os error 13)`
+
+Symptom:
+
+```
+ERROR zeroclaw::channels: Channel whatsapp error: Permission denied (os error 13); restarting
+```
+
+Cause:
+
+Named volume files were created as root (e.g. by running `onboard` from a different image or without the volume mount), but the container runs as `nobody` (uid 65534).
+
+**Permanent fix (images built from this repo):** The release image entrypoint automatically runs `chown -R 65534:65534 /zeroclaw-data` before dropping to nobody. Rebuild and redeploy.
+
+**Manual fix for existing deployments:**
+
+```bash
+# 1. Fix ownership on the running container
+docker exec -u root -it zeroclaw /bin/busybox chown -R 65534:65534 /zeroclaw-data
+
+# 2. Run onboard inside the same container (avoids a fresh volume)
+docker exec -it zeroclaw zeroclaw onboard --channels-only
+```
+
+### WhatsApp Web channel missing: `requires 'whatsapp-web' feature`
+
+Symptom:
+
+```
+WARN zeroclaw::channels: WhatsApp Web backend requires 'whatsapp-web' feature.
+```
+
+Cause:
+
+The deployed image was built without `--features whatsapp-web`. The image tag alone does not enforce build flags.
+
+Fix: rebuild with the feature enabled, then push:
+
+```bash
+docker compose build   # docker-compose.override.yml passes FEATURES=whatsapp-web
+docker push ghcr.io/<your-org>/zeroclaw:whatsapp-web
+```
+
+Then redeploy on the server:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
 ## Channel Issues
 
 ### Telegram conflict: `terminated by other getUpdates request`

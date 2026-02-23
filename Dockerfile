@@ -120,6 +120,7 @@ FROM gcr.io/distroless/cc-debian13:nonroot@sha256:84fcd3c223b144b0cb6edc5ecc7564
 COPY --from=busybox /bin/busybox /bin/busybox
 COPY --from=builder /app/zeroclaw /usr/local/bin/zeroclaw
 COPY --from=builder /zeroclaw-data /zeroclaw-data
+COPY entrypoint.sh /entrypoint.sh
 
 # Environment setup
 ENV ZEROCLAW_WORKSPACE=/zeroclaw-data/workspace
@@ -131,8 +132,9 @@ ENV ZEROCLAW_GATEWAY_PORT=42617
 
 # API_KEY must be provided at runtime!
 
+# Note: container starts as root so entrypoint.sh can fix volume ownership,
+# then drops to nobody (65534) via setuidgid before exec'ing zeroclaw.
 WORKDIR /zeroclaw-data
-USER 65534:65534
 EXPOSE 42617
-ENTRYPOINT ["zeroclaw"]
+ENTRYPOINT ["/bin/busybox", "sh", "/entrypoint.sh"]
 CMD ["gateway"]
