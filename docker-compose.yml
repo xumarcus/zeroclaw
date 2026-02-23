@@ -7,7 +7,7 @@ services:
       - API_KEY=${API_KEY:-}
       - PROVIDER={PROVIDER:-openrouter}
       - ZEROCLAW_ALLOW_PUBLIC_BIND=true
-      - ZEROCLAW_GATEWAY_HOST=127.0.0.1
+      - ZEROCLAW_GATEWAY_HOST=0.0.0.0
       - ZEROCLAW_GATEWAY_PORT=${ZEROCLAW_GATEWAY_PORT:-42617}
     volumes:
       - zeroclaw-data:/zeroclaw-data

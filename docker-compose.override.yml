@@ -1,0 +1,6 @@
+services:
+  zeroclaw:
+    build:
+      context: .
+      args:
+        FEATURES: "whatsapp-web"

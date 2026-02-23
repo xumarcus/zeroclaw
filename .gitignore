@@ -7,7 +7,6 @@ firmware/*/target
 .wt-pr37/
 __pycache__/
 *.pyc
-docker-compose.override.yml
 
 # Environment files (may contain secrets)
 .env
