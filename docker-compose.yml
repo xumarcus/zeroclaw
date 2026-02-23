@@ -41,15 +41,15 @@ services:
       # Gateway API port (override HOST_PORT if 42617 is taken)
       - "${HOST_PORT:-42617}:${ZEROCLAW_GATEWAY_PORT:-42617}"
     
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
+    # Resource limits: not supported on device
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
 
     # Health check — uses lightweight status instead of full diagnostics.
     # For images with curl, prefer: curl -f http://localhost:42617/health
